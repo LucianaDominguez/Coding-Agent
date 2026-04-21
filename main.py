@@ -1,11 +1,15 @@
-from agent import runAgent
+from agent import runAgent, SYSTEM_PROMPT
 from rich import print
 
-messages = []
+
+messages = [
+    {"role": "system", "content": SYSTEM_PROMPT}
+]
 
 try: 
     while True:
-        user_input = input("[bold blue]You: [/bold blue]")
+        print("[bold blue]You:[/bold blue]", end=" ") # sólo para que aparezca en color, desde input no es posible.
+        user_input = input()
         messages.append({"role": "user", "content": user_input})
 
         response = runAgent(messages)
