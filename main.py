@@ -1,9 +1,9 @@
-from agent import runAgent, SYSTEM_PROMPT
+from agent import runAgent, build_system_prompt
 from rich import print
 
 
 messages = [
-    {"role": "system", "content": SYSTEM_PROMPT}
+    {"role": "system", "content": build_system_prompt()}
 ]
 
 try: 

@@ -1,6 +1,8 @@
 import json
+import inspect
 from openai import OpenAI
 from dotenv import load_dotenv
+
 
 load_dotenv()
 client = OpenAI()
@@ -20,12 +22,36 @@ tool: NAME({"arg": "value"})
 After that, you will receive a message with tool_result(...).
 If you do not need a tool, respond normally.
 """
+def buildSystemPrompt():
+    signature = inspect.signature(readFileTool)
+    doc = readFileTool.__doc__
+
+    return f"""
+    You are a coding assistant whose goal is to help solve coding tasks.
+
+    You have access to the following tools:
+
+    TOOL: read_file_tool
+    Description:
+    {doc}
+
+    Signature: {signature}
+
+    When you want to use a tool, respond EXACTLY with:
+    tool: NAME({{"arg": "value"}})
+
+    After that, you will receive a message with tool_result(...).
+    If you do not need a tool, respond normally.
+    """
+
 def readFileTool (filename: str) -> dict:
     """
     Lee el contenido completo de un archivo.
     :param filename: ruta al archivo (absoluta o relativa al cwd).
     :return: dict con 'file_path' y 'content'.
     """
+
+
     try:
         with open(filename, "r") as f:
             content = f.read()
