@@ -1,16 +1,23 @@
-from agent import runAgent, build_system_prompt
+# python -m venv venv
+# Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+# venv\Scripts\activate
+# pip install -r requirements.txt
+
+# EJECUTAR CON: python main.py , teniendo (venv)
+
+from agent import runAgent, buildSystemPrompt
 from rich import print
 
 
 messages = [
-    {"role": "system", "content": build_system_prompt()}
+    {"role": "system", "content": buildSystemPrompt()}
 ]
 
 try: 
     while True:
         print("[bold blue]You:[/bold blue]", end=" ") # sólo para que aparezca en color, desde input no es posible.
-        user_input = input()
-        messages.append({"role": "user", "content": user_input})
+        userInput = input()
+        messages.append({"role": "user", "content": userInput})
 
         response = runAgent(messages)
         print(f"[bold green]Agent: [/bold green]{response}")

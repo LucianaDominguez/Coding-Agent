@@ -7,21 +7,6 @@ from dotenv import load_dotenv
 load_dotenv()
 client = OpenAI()
 
-SYSTEM_PROMPT = """
-You are a coding assistant whose goal it is to help us solve coding tasks. 
-
-You have access to the following tools:
-
-TOOL: readFile
-Description: Reads the full content of a file.
-Signature: (filename: str) -> dict
-
-When you want to use a tool, respond EXACTLY with:
-tool: NAME({"arg": "value"})
-
-After that, you will receive a message with tool_result(...).
-If you do not need a tool, respond normally.
-"""
 def buildSystemPrompt():
     signature = inspect.signature(readFileTool)
     doc = readFileTool.__doc__
@@ -31,7 +16,7 @@ def buildSystemPrompt():
 
     You have access to the following tools:
 
-    TOOL: read_file_tool
+    TOOL: readFileTool
     Description:
     {doc}
 
@@ -48,7 +33,7 @@ def readFileTool (filename: str) -> dict:
     """
     Lee el contenido completo de un archivo.
     :param filename: ruta al archivo (absoluta o relativa al cwd).
-    :return: dict con 'file_path' y 'content'.
+    :return: dict con 'filePath' y 'content'.
     """
 
 
@@ -56,7 +41,7 @@ def readFileTool (filename: str) -> dict:
         with open(filename, "r") as f:
             content = f.read()
         return {
-            "file_path": filename,
+            "filePath": filename,
             "content": content
     }
     except Exception as e:
@@ -64,7 +49,7 @@ def readFileTool (filename: str) -> dict:
             "error": str(e)
         }
 
-def extract_tool_invocations(text: str):
+def extractToolInvocations(text: str):
     results = []
 
     lines = text.splitlines()
@@ -74,14 +59,14 @@ def extract_tool_invocations(text: str):
 
         if line.startswith("tool:"):
             try:
-                tool_call = line.replace("tool:", "").strip()
+                toolCall = line.replace("tool:", "").strip()
 
-                name, args = tool_call.split("(", 1)
-                args = args[:-1]  # quitar ")"
+                name, args = toolCall.split("(", 1)
+                args = args[:-1]  # saca ")"
 
-                args_dict = json.loads(args)
+                argsDict = json.loads(args)
 
-                results.append((name, args_dict))
+                results.append((name, argsDict))
 
             except Exception as e:
                 print(f"Error parsing tool: {e}")
@@ -90,17 +75,38 @@ def extract_tool_invocations(text: str):
 
 
 
-
-
-
 def runAgent(messages):
-    # tool_calls = extract_tool_invocations(text) CHECKEAR
+    
     response = client.chat.completions.create(
         model = "gpt-4o-mini",
         messages = messages
     )
 
-    return response.choices[0].message.content
+    text = response.choices[0].message.content
+    toolCalls = extractToolInvocations(text)
+
+    if not toolCalls:
+        return text
+    
+    results = []
+
+    for name, args in toolCalls:
+        if name == "readFileTool":
+            result = readFileTool(**args)
+            
+            messages.append({
+                "role": "assistant",
+                "content": f"toolResult({result})"
+            })
+    
+    secondResponse = client.chat.completions.create(
+        model = "gpt-4o-mini",
+        messages = messages
+    )
+
+    finalText = secondResponse.choices[0].message.content
+    
+    return finalText
 
 
 
