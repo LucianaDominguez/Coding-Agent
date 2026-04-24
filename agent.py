@@ -3,24 +3,40 @@ import inspect
 from openai import OpenAI
 from dotenv import load_dotenv
 
+from tools import readFile, listFiles
+
+TOOL_REGISTRY = {
+    "readFile": readFile,
+    "ListFiles" : listFiles,
+   # "EditFiles" : editFile
+}
+
 
 load_dotenv()
 client = OpenAI()
 
 def buildSystemPrompt():
-    signature = inspect.signature(readFileTool)
-    doc = readFileTool.__doc__
+    toolsDescription = ""
+
+    for name, func in TOOL_REGISTRY.items():
+        signature = inspect.signature(func)
+        doc = func.__doc__
+
+        toolsDescription += f"""
+
+        TOOL: {name}
+        Description:
+        {doc}
+
+        Signature: {signature}
+        """
 
     return f"""
-    You are a coding assistant whose goal is to help solve coding tasks.
+    You are a coding agent.
 
     You have access to the following tools:
 
-    TOOL: readFileTool
-    Description:
-    {doc}
-
-    Signature: {signature}
+    {toolsDescription}
 
     When you want to use a tool, respond EXACTLY with:
     tool: NAME({{"arg": "value"}})
@@ -29,25 +45,6 @@ def buildSystemPrompt():
     If you do not need a tool, respond normally.
     """
 
-def readFileTool (filename: str) -> dict:
-    """
-    Lee el contenido completo de un archivo.
-    :param filename: ruta al archivo (absoluta o relativa al cwd).
-    :return: dict con 'filePath' y 'content'.
-    """
-
-
-    try:
-        with open(filename, "r") as f:
-            content = f.read()
-        return {
-            "filePath": filename,
-            "content": content
-    }
-    except Exception as e:
-        return {
-            "error": str(e)
-        }
 
 def extractToolInvocations(text: str):
     results = []
@@ -88,11 +85,11 @@ def runAgent(messages):
     if not toolCalls:
         return text
     
-    results = []
+    # results = []
 
     for name, args in toolCalls:
-        if name == "readFileTool":
-            result = readFileTool(**args)
+        if name in TOOL_REGISTRY:
+            result = TOOL_REGISTRY[name](**args)
             
             messages.append({
                 "role": "assistant",
