@@ -26,3 +26,4 @@ try:
 
 except KeyboardInterrupt:
     print("\n[bold red]Saliendo del REPL...[/bold red]")
+

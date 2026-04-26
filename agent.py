@@ -1,19 +1,23 @@
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv()
+client = OpenAI()
+
+import os
 import json
 import inspect
-from openai import OpenAI
-from dotenv import load_dotenv
 
-from tools import readFile, listFiles
+from tools import readFile, listFiles, editFile
 
 TOOL_REGISTRY = {
     "readFile": readFile,
     "ListFiles" : listFiles,
-   # "EditFiles" : editFile
+    "EditFiles" : editFile
 }
 
 
-load_dotenv()
-client = OpenAI()
+
 
 def buildSystemPrompt():
     toolsDescription = ""
@@ -80,6 +84,12 @@ def runAgent(messages):
     )
 
     text = response.choices[0].message.content
+
+    messages.append({
+        "role": "assistant",
+        "content": text
+    })
+
     toolCalls = extractToolInvocations(text)
 
     if not toolCalls:
@@ -102,6 +112,11 @@ def runAgent(messages):
     )
 
     finalText = secondResponse.choices[0].message.content
+
+    messages.append({
+        "role": "assistant",
+        "content": finalText
+    })
     
     return finalText
 
