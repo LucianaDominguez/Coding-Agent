@@ -77,48 +77,49 @@ def extractToolInvocations(text: str):
 
 
 def runAgent(messages):
+    MAX_STEPS = 5
     
-    response = client.chat.completions.create(
-        model = "gpt-4o-mini",
-        messages = messages
-    )
+    for step in range(MAX_STEPS):
 
-    text = response.choices[0].message.content
+        # print(f"\n[STEP {step}]")
 
-    messages.append({
-        "role": "assistant",
-        "content": text
-    })
+        response = client.chat.completions.create(
+            model = "gpt-4o-mini",
+            messages = messages
+        )
 
-    toolCalls = extractToolInvocations(text)
+        text = response.choices[0].message.content
 
-    if not toolCalls:
-        return text
+        # print("MODEL: ", text)
+        messages.append({
+            "role": "assistant",
+            "content": text
+        })
+
+        toolCalls = extractToolInvocations(text)
+
+        if not toolCalls:
+            return text
     
-    # results = []
+   
 
-    for name, args in toolCalls:
-        if name in TOOL_REGISTRY:
-            result = TOOL_REGISTRY[name](**args)
-            
-            messages.append({
-                "role": "assistant",
-                "content": f"toolResult({result})"
-            })
+        for name, args in toolCalls:
+
+            # print(f"[TOOL CALL] {name} {args}")
+
+            if name in TOOL_REGISTRY:
+                try:
+                    result = TOOL_REGISTRY[name](**args)
+                except Exception as e:
+                    result = {"error": str(e)}
+                
+                messages.append({
+                    "role": "assistant",
+                    "content": f"tool_result: ({result})"
+                })
     
-    secondResponse = client.chat.completions.create(
-        model = "gpt-4o-mini",
-        messages = messages
-    )
 
-    finalText = secondResponse.choices[0].message.content
-
-    messages.append({
-        "role": "assistant",
-        "content": finalText
-    })
-    
-    return finalText
+    return "Se alcanzó el máximo de pasos sin una respuesta definitiva."
 
 
 

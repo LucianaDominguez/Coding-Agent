@@ -1,6 +1,5 @@
 import os
 
-
 def readFile (filename: str) -> dict:
     """
     Lee el contenido completo de un archivo.
