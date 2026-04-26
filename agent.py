@@ -5,6 +5,7 @@ load_dotenv()
 client = OpenAI()
 
 import os
+import re
 import json
 import inspect
 
@@ -15,8 +16,6 @@ TOOL_REGISTRY = {
     "ListFiles" : listFiles,
     "EditFiles" : editFile
 }
-
-
 
 
 def buildSystemPrompt():
@@ -42,35 +41,45 @@ def buildSystemPrompt():
 
     {toolsDescription}
 
+    IMPORTANT RULES:
+
+    - You MUST use tools for any action that involves the filesystem.
+    - Creating files → use edit_file
+    - Editing files → use edit_file
+    - Reading files → use read_file
+    - Listing directories → use list_files
+
+    - NEVER simulate file operations.
+    - If a task requires a tool, you MUST call it.
+
+    TOOL USAGE FORMAT:
+
     When you want to use a tool, respond EXACTLY with:
     tool: NAME({{"arg": "value"}})
 
+    - Do NOT include explanations.
+    - Do NOT include extra text.
+    - ONLY return the tool call.
+
     After that, you will receive a message with tool_result(...).
-    If you do not need a tool, respond normally.
+
+    Only respond normally when no tool is needed.
     """
 
 
 def extractToolInvocations(text: str):
     results = []
 
-    lines = text.splitlines()
+    pattern = r'tool:\s*(\w+)\((\{.*?\})\)'
 
-    for line in lines:
-        line = line.strip()
+    matches = re.findall(pattern, text, re.DOTALL)
 
-        if line.startswith("tool:"):
-            try:
-                toolCall = line.replace("tool:", "").strip()
-
-                name, args = toolCall.split("(", 1)
-                args = args[:-1]  # saca ")"
-
-                argsDict = json.loads(args)
-
-                results.append((name, argsDict))
-
-            except Exception as e:
-                print(f"Error parsing tool: {e}")
+    for name, argsStr in matches:
+        try:
+            argsDict = json.loads(argsStr)
+            results.append((name, argsDict))
+        except Exception as e:
+            print(f"Error parsing tool: {e}")
 
     return results
 
@@ -81,7 +90,7 @@ def runAgent(messages):
     
     for step in range(MAX_STEPS):
 
-        # print(f"\n[STEP {step}]")
+        print(f"\n[STEP {step}]")
 
         response = client.chat.completions.create(
             model = "gpt-4o-mini",
@@ -105,7 +114,7 @@ def runAgent(messages):
 
         for name, args in toolCalls:
 
-            # print(f"[TOOL CALL] {name} {args}")
+            print(f"[TOOL CALL] {name} {args}")
 
             if name in TOOL_REGISTRY:
                 try:
