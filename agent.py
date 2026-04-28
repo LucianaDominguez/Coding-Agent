@@ -44,10 +44,10 @@ def buildSystemPrompt():
     IMPORTANT RULES:
 
     - You MUST use tools for any action that involves the filesystem.
-    - Creating files → use edit_file
-    - Editing files → use edit_file
-    - Reading files → use read_file
-    - Listing directories → use list_files
+    - Creating files → use editFile
+    - Editing files → use editFile
+    - Reading files → use readFile
+    - Listing directories → use listFiles
 
     - NEVER simulate file operations.
     - If a task requires a tool, you MUST call it.

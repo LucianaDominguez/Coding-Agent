@@ -25,5 +25,5 @@ try:
         messages.append({"role": "assistant", "content": response})
 
 except KeyboardInterrupt:
-    print("\n[bold red]Saliendo del REPL...[/bold red]")
+    print("\n[bold red]Closing...[/bold red]")
 

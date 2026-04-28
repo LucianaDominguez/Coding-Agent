@@ -55,14 +55,14 @@ def editFile(path: str, oldStr: str, newStr: str) -> dict:
     """
     Edit or create a file.
 
-    - If old_str is empty: create or overwrite the file with new_str.
-    - If old_str is provided: replace the FIRST occurrence with new_str.
+    - If oldStr is empty: create or overwrite the file with newStr.
+    - If oldStr is provided: replace the FIRST occurrence with newStr.
 
     Use this to modify files or create new ones.
 
     :param path: File path.
-    :param old_str: Text to replace (empty to create).
-    :param new_str: New content or replacement.
+    :param oldStr: Text to replace (empty to create).
+    :param newStr: New content or replacement.
     :return: dict describing the action taken.
     """
     try:
