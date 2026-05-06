@@ -72,7 +72,8 @@ def editFile(path: str, oldStr: str, newStr: str) -> dict:
 
             return{
             "action": "createdFile",
-            "path": path
+            "path": path,
+            "message": f"File '{path}' was successfully created with the provided content."
             }
         
         with open(path, "r", encoding="utf-8") as f:
@@ -91,7 +92,8 @@ def editFile(path: str, oldStr: str, newStr: str) -> dict:
         
         return{
             "action" : "edited",
-            "path": path
+            "path": path,
+            "message": f"File '{path}' was successfully updated."
         }
     except Exception as e:
         return {"error": str(e)}

@@ -1,11 +1,11 @@
 from dotenv import load_dotenv
 from openai import OpenAI
+from tools_schema import TOOLS
 
 load_dotenv()
 client = OpenAI()
 
 import os
-import re
 import json
 import inspect
 
@@ -67,7 +67,7 @@ def buildSystemPrompt():
     """
 
 
-def extractToolInvocations(text: str):
+""" def extractToolInvocations(text: str):
     results = []
 
     pattern = r'tool:\s*(\w+)\((\{.*?\})\)'
@@ -82,7 +82,7 @@ def extractToolInvocations(text: str):
             print(f"Error parsing tool: {e}")
 
     return results
-
+"""
 
 
 def runAgent(messages):
@@ -94,25 +94,28 @@ def runAgent(messages):
 
         response = client.chat.completions.create(
             model = "gpt-4o-mini",
-            messages = messages
+            messages = messages,
+            tools=TOOLS
         )
 
-        text = response.choices[0].message.content
+        message = response.choices[0].message
 
-        # print("MODEL: ", text)
-        messages.append({
-            "role": "assistant",
-            "content": text
-        })
-
-        toolCalls = extractToolInvocations(text)
+        if message.content and not message.tool_calls:
+            messages.append({
+                "role": "assistant",
+                "content": message.content
+            })
+       
+        toolCalls = message.tool_calls
 
         if not toolCalls:
-            return text
+            return message.content
     
    
 
-        for name, args in toolCalls:
+        for call in toolCalls:
+            name = call.function.name
+            args = json.loads(call.function.arguments)
 
             print(f"[TOOL CALL] {name} {args}")
 
@@ -123,12 +126,12 @@ def runAgent(messages):
                     result = {"error": str(e)}
                 
                 messages.append({
-                    "role": "assistant",
-                    "content": f"tool_result: ({result})"
+                    "role": "tool",
+                    "tool_call_id": call.id,
+                    "content": json.dumps(result)
                 })
     
 
     return "Se alcanzó el máximo de pasos sin una respuesta definitiva."
-
 
 
