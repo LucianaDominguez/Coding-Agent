@@ -17,6 +17,9 @@ TOOL_REGISTRY = {
     "editFile" : editFile
 }
 
+DESTRUCTIVE_TOOLS = {
+    "editFile"
+}
 
 def buildSystemPrompt():
     toolsDescription = ""
@@ -104,10 +107,24 @@ def runAgent(messages):
             print(f"[TOOL CALL] {name} {args}")
 
             if name in TOOL_REGISTRY:
-                try:
-                    result = TOOL_REGISTRY[name](**args)
-                except Exception as e:
-                    result = {"error": str(e)}
+                if name in DESTRUCTIVE_TOOLS:
+                    print(f"Approval required for: {name}")
+                    print(f"Arguments: {args}")
+
+                    approval = input("Approve) (y/n): ").strip().lower()
+
+                    if approval != "y":
+                        result = {"error": "Tool excecution cancelled by user"}
+                    else:
+                        try:
+                            result = TOOL_REGISTRY[name](**args)
+                        except Exception as e:
+                            result = {"error": str(e)}
+                else:
+                    try:
+                        result = TOOL_REGISTRY[name](**args)
+                    except Exception as e:
+                        result = {"error": str(e)}
             else:
                 result = {"error": f"Unknown tool: {name}"}
 
