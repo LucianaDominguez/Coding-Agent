@@ -13,8 +13,8 @@ from tools import readFile, listFiles, editFile
 
 TOOL_REGISTRY = {
     "readFile": readFile,
-    "ListFiles" : listFiles,
-    "EditFiles" : editFile
+    "listFiles" : listFiles,
+    "editFile" : editFile
 }
 
 
@@ -35,53 +35,43 @@ def buildSystemPrompt():
         """
 
     return f"""
-    You are a coding agent.
+You are a coding agent specialized in helping users interact with a local codebase and filesystem.
 
-    You have access to the following tools:
+You have access to the following tools:
 
-    {toolsDescription}
+{toolsDescription}
 
-    IMPORTANT RULES:
+GENERAL BEHAVIOR:
 
-    - You MUST use tools for any action that involves the filesystem.
-    - Creating files → use editFile
-    - Editing files → use editFile
-    - Reading files → use readFile
-    - Listing directories → use listFiles
+- Be concise, precise, and action-oriented.
+- Prefer using tools over assumptions.
+- Never invent filesystem contents.
+- Never pretend a file was created, modified, or read if no tool was used.
+- Use tools whenever filesystem information is required.
 
-    - NEVER simulate file operations.
-    - If a task requires a tool, you MUST call it.
+FILESYSTEM RULES:
 
-    TOOL USAGE FORMAT:
+- To read file contents → use readFile
+- To inspect directories → use listFiles
+- To create files → use editFile
+- To modify existing files → use editFile
 
-    When you want to use a tool, respond EXACTLY with:
-    tool: NAME({{"arg": "value"}})
+TOOL USAGE RULES:
 
-    - Do NOT include explanations.
-    - Do NOT include extra text.
-    - ONLY return the tool call.
+- You may call multiple tools sequentially if needed.
+- Before editing a file, read it first when context is necessary.
+- Preserve existing code unless the user explicitly asks to replace it.
+- Make minimal, targeted edits whenever possible.
+- If a tool fails, analyze the error and recover intelligently when possible.
 
-    After that, you will receive a message with tool_result(...).
+IMPORTANT:
 
-    Only respond normally when no tool is needed.
-    """
+- Do NOT output fake tool syntax.
+- Do NOT describe tool calls in plain text.
+- Use the provided function calling interface directly.
+- Respond normally only after completing the necessary tool actions.
 
-
-""" def extractToolInvocations(text: str):
-    results = []
-
-    pattern = r'tool:\s*(\w+)\((\{.*?\})\)'
-
-    matches = re.findall(pattern, text, re.DOTALL)
-
-    for name, argsStr in matches:
-        try:
-            argsDict = json.loads(argsStr)
-            results.append((name, argsDict))
-        except Exception as e:
-            print(f"Error parsing tool: {e}")
-
-    return results
+Your goal is to behave like a real autonomous coding assistant.
 """
 
 
@@ -99,19 +89,13 @@ def runAgent(messages):
         )
 
         message = response.choices[0].message
-
-        if message.content and not message.tool_calls:
-            messages.append({
-                "role": "assistant",
-                "content": message.content
-            })
+        messages.append(message)
        
         toolCalls = message.tool_calls
 
         if not toolCalls:
             return message.content
     
-   
 
         for call in toolCalls:
             name = call.function.name
@@ -124,12 +108,14 @@ def runAgent(messages):
                     result = TOOL_REGISTRY[name](**args)
                 except Exception as e:
                     result = {"error": str(e)}
-                
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": call.id,
-                    "content": json.dumps(result)
-                })
+            else:
+                result = {"error": f"Unknown tool: {name}"}
+
+            messages.append({
+                "role": "tool",
+                "tool_call_id": call.id,
+                "content": json.dumps(result)
+            })
     
 
     return "Se alcanzó el máximo de pasos sin una respuesta definitiva."
