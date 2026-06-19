@@ -1,7 +1,13 @@
-# python -m venv venv
+# python -m venv venv o py -m venv venv 
 # Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 # venv\Scripts\activate
 # pip install -r requirements.txt
+# para arrancar back: python -m uvicorn backend.main:app --reload
+
+# para front abrir otra terminal
+# cd frontend
+# npm install
+#npm run dev
 
 # EJECUTAR CON: python main.py , teniendo (venv)
 
